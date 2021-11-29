@@ -1,4 +1,0 @@
-/users/elo/ajoly/Documents/clion-2021.2.3/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_DEPENDS_USE_COMPILER=FALSE -G "CodeBlocks - Unix Makefiles" /users/elo/ajoly/Documents/Enssat-Snake-Project
--- Configuring done
--- Generating done
--- Build files have been written to: /users/elo/ajoly/Documents/Enssat-Snake-Project/cmake-build-debug
