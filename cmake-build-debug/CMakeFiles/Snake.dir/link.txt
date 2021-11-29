@@ -1,1 +1,1 @@
-/usr/bin/cc -g   CMakeFiles/Snake.dir/Astar.c.o  -o Snake 
+/usr/bin/cc -g CMakeFiles/Snake.dir/player_astar.c.o ../snake.o -o Snake 

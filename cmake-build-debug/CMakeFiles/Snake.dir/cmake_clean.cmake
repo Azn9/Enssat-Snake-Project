@@ -1,5 +1,5 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/Snake.dir/Astar.c.o"
+  "CMakeFiles/Snake.dir/player_astar.c.o"
   "Snake"
   "Snake.pdb"
 )
