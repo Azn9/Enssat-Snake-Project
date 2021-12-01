@@ -15,6 +15,7 @@ extern const char SNAKE_TAIL; // ascii used for snake's tail
 extern const char WALL; // ascii used for the walls
 extern const char PATH; // ascii used for the paths
 extern const char BONUS; // ascii used for the bonuses
+extern bool DEBUG;
 
 char *binome = "Astar"; // student names here
 
@@ -25,6 +26,8 @@ void computeCell(
         int sourcey,
         int destinationx,
         int destinationy,
+        int origin_x,
+        int origin_y,
         int previousCost,
         int mapxsize,
         int mapysize,
@@ -53,6 +56,7 @@ void foundPath(
         int mapysize,
         int heuristic_ptr2[mapysize][mapxsize],
         int calculated_ptr2[mapysize][mapxsize],
+        int cost[mapysize][mapxsize],
         int *next_x,
         int *next_y,
         int chosen[mapysize][mapxsize]
@@ -63,7 +67,8 @@ char *color(int x, int y, int mapxsize, int mapysize, int cost[mapysize][mapxsiz
 void displayGrid(int mapxsize, int mapysize, int heuristic[mapysize][mapxsize], int cost[mapysize][mapxsize],
                  int chosen[mapysize][mapxsize]);
 
-action calculate_direction(int x, int y, int next_x, int next_y, action last_action, int mapxsize, int mapysize, char **map);
+action
+calculate_direction(int x, int y, int next_x, int next_y, action last_action, int mapxsize, int mapysize, char **map);
 
 int distance(int source_x, int source_y, int destination_x, int destination_y);
 
@@ -97,7 +102,7 @@ action snake(
             chosen[search_y][search_x] = 0;
 
             if (map[search_y][search_x] == SNAKE_BODY || map[search_y][search_x] == SNAKE_HEAD ||
-                map[search_y][search_x] == SNAKE_TAIL || map[search_y][search_x] == WALL) {
+                map[search_y][search_x] == WALL) {
                 cost[search_y][search_x] = -1;
                 heuristic[search_y][search_x] = -1;
                 calculated[search_y][search_x] = -1;
@@ -113,18 +118,23 @@ action snake(
     int x = s->x;
     int y = s->y;
 
-    computeCell(x, y, x, y, apple_x, apple_y, 0, mapxsize, mapysize, cost, heuristic, calculated);
+    computeCell(x, y, x, y, apple_x, apple_y, x, y, 0, mapxsize, mapysize, cost, heuristic, calculated);
     displayGrid(mapxsize, mapysize, heuristic, cost, chosen);
 
     calculated[y][x] = 1;
-    cost[y][x] = 0;
-    heuristic[y][x] = 0;
+    cost[y][x] = 1;
+    heuristic[y][x] = 1;
+
+    chosen[apple_y][apple_x] = 1;
 
     int next_x = x;
     int next_y = y;
 
-    foundPath(apple_x, apple_y, x, y, mapxsize, mapysize, heuristic, calculated, &next_x, &next_y, chosen);
+    foundPath(apple_x, apple_y, x, y, mapxsize, mapysize, heuristic, calculated, cost, &next_x, &next_y, chosen);
     displayGrid(mapxsize, mapysize, heuristic, cost, chosen);
+
+    if (DEBUG)
+        printf("NEXT: %d %d\n", next_x, next_y);
 
     if (next_x == x && next_y == y) {
         return random_not_killing(x, y, last_action, last_action, mapxsize, mapysize, map);
@@ -171,6 +181,8 @@ void computeCell(
         int sourcey,
         int destinationx,
         int destinationy,
+        int origin_x,
+        int origin_y,
         int previousCost,
         int mapxsize,
         int mapysize,
@@ -198,28 +210,32 @@ void computeCell(
         cost[y][x - 1] = currentCost + 1;
         heuristic[y][x - 1] =
                 currentCost + 1 +
-                calculWeight(x - 1, y, destinationx, destinationy, mapxsize, mapysize, calculated, heuristic);
+                calculWeight(x - 1, y, destinationx, destinationy, mapxsize, mapysize, calculated, heuristic) +
+                calculWeight(x - 1, y, origin_x, origin_y, mapxsize, mapysize, calculated, heuristic);
     }
 
     if (y > 0 && cost[y - 1][x] == 0) {
         cost[y - 1][x] = currentCost + 1;
         heuristic[y - 1][x] =
                 currentCost + 1 +
-                calculWeight(x, y - 1, destinationx, destinationy, mapxsize, mapysize, calculated, heuristic);
+                calculWeight(x, y - 1, destinationx, destinationy, mapxsize, mapysize, calculated, heuristic) +
+                calculWeight(x, y - 1, origin_x, origin_y, mapxsize, mapysize, calculated, heuristic);
     }
 
     if (x < mapxsize - 1 && cost[y][x + 1] == 0) {
         cost[y][x + 1] = currentCost + 1;
         heuristic[y][x + 1] =
                 currentCost + 1 +
-                calculWeight(x + 1, y, destinationx, destinationy, mapxsize, mapysize, calculated, heuristic);
+                calculWeight(x + 1, y, destinationx, destinationy, mapxsize, mapysize, calculated, heuristic) +
+                calculWeight(x + 1, y, origin_x, origin_y, mapxsize, mapysize, calculated, heuristic);
     }
 
     if (y < mapysize - 1 && cost[y + 1][x] == 0) {
         cost[y + 1][x] = currentCost + 1;
         heuristic[y + 1][x] =
                 currentCost + 1 +
-                calculWeight(x, y + 1, destinationx, destinationy, mapxsize, mapysize, calculated, heuristic);
+                calculWeight(x, y + 1, destinationx, destinationy, mapxsize, mapysize, calculated, heuristic) +
+                calculWeight(x, y + 1, origin_x, origin_y, mapxsize, mapysize, calculated, heuristic);
     }
 
     calculated[y][x] = 1;
@@ -246,7 +262,7 @@ void computeCell(
         }
     }
 
-    computeCell(lessx, lessy, sourcex, sourcey, destinationx, destinationy, currentCost + 1, mapxsize, mapysize, cost,
+    computeCell(lessx, lessy, sourcex, sourcey, destinationx, destinationy, origin_x, origin_y, currentCost + 1, mapxsize, mapysize, cost,
                 heuristic, calculated);
 }
 
@@ -259,24 +275,30 @@ void foundPath(
         int mapysize,
         int heuristic_ptr2[mapysize][mapxsize],
         int calculated_ptr2[mapysize][mapxsize],
+        int cost[mapysize][mapxsize],
         int *next_x,
         int *next_y,
         int chosen[mapysize][mapxsize]
 ) {
     if (x == destination_x && y == destination_y) {
-        printf("Arrivé !");
+        if (DEBUG)
+            printf("Arrivé !");
         return;
     }
 
-    printf("Destination X:%d Y:%d\n", destination_x, destination_y);
-    printf("Processing X:%d Y:%d\n", x, y);
+    if (DEBUG) {
+        printf("Destination X:%d Y:%d\n", destination_x, destination_y);
+        printf("Processing X:%d Y:%d\n", x, y);
+    }
 
     int lessx = 0;
     int lessy = 0;
     int lessweight = 999999999;
     int currentWeight;
 
-    printf("X:%d chosen[y][x - 1]:%d calculated_ptr2[y][x - 1]:%d\n", x, chosen[y][x - 1], calculated_ptr2[y][x - 1]);
+    if (DEBUG)
+        printf("X:%d chosen[y][x - 1]:%d calculated_ptr2[y][x - 1]:%d\n", x, chosen[y][x - 1],
+               calculated_ptr2[y][x - 1]);
     if (x > 0 && chosen[y][x - 1] == 0) {
         currentWeight = heuristic_ptr2[y][x - 1];
 
@@ -287,7 +309,9 @@ void foundPath(
         }
     }
 
-    printf("X:%d chosen[y][x + 1]:%d calculated_ptr2[y][x + 1]:%d\n", x, chosen[y][x + 1], calculated_ptr2[y][x + 1]);
+    if (DEBUG)
+        printf("X:%d chosen[y][x + 1]:%d calculated_ptr2[y][x + 1]:%d\n", x, chosen[y][x + 1],
+               calculated_ptr2[y][x + 1]);
     if (x < mapxsize - 1 && chosen[y][x + 1] == 0) {
         currentWeight = heuristic_ptr2[y][x + 1];
 
@@ -298,7 +322,9 @@ void foundPath(
         }
     }
 
-    printf("X:%d chosen[y - 1][x]:%d calculated_ptr2[y - 1][x]:%d\n", y, chosen[y - 1][x], calculated_ptr2[y - 1][x]);
+    if (DEBUG)
+        printf("YX:%d chosen[y - 1][x]:%d calculated_ptr2[y - 1][x]:%d\n", y, chosen[y - 1][x],
+               calculated_ptr2[y - 1][x]);
     if (y > 0 && chosen[y - 1][x] == 0) {
         currentWeight = heuristic_ptr2[y - 1][x];
 
@@ -309,7 +335,9 @@ void foundPath(
         }
     }
 
-    printf("X:%d chosen[y + 1][x]:%d calculated_ptr2[y + 1][x]:%d\n", y, chosen[y + 1][x], calculated_ptr2[y + 1][x]);
+    if (DEBUG)
+        printf("Y:%d chosen[y + 1][x]:%d calculated_ptr2[y + 1][x]:%d\n", y, chosen[y + 1][x],
+               calculated_ptr2[y + 1][x]);
     if (y < mapysize - 1 && chosen[y + 1][x] == 0) {
         currentWeight = heuristic_ptr2[y + 1][x];
 
@@ -321,25 +349,31 @@ void foundPath(
     }
 
     if (lessweight == 999999999) { //impossible
-        printf("Pas de chemin\n");
+        if (DEBUG)
+            printf("Pas de chemin\n");
         return;
     }
 
     chosen[lessy][lessx] = 1;
 
-    if (!(lessx == destination_x && lessy == destination_y)) {
+    displayGrid(mapxsize, mapysize, heuristic_ptr2, cost, chosen);
+
+    if (lessx == destination_x && lessy == destination_y) {
         //chosen[lessy][lessx] = 1;
 
         //printf("Less is X:%d Y:%d\n", lessx, lessy);
 
         //displayGrid(mapxsize, mapysize, chosen, chosen, chosen);
 
-        *next_x = lessx;
-        *next_y = lessy;
+        if (DEBUG)
+            printf("Found path !");
+
+        *next_x = x;
+        *next_y = y;
         return;
     }
 
-    foundPath(lessx, lessy, destination_x, destination_y, mapxsize, mapysize, heuristic_ptr2, calculated_ptr2,
+    foundPath(lessx, lessy, destination_x, destination_y, mapxsize, mapysize, heuristic_ptr2, calculated_ptr2, cost,
               next_x,
               next_y, chosen);
 }
@@ -365,7 +399,8 @@ int distance(int source_x, int source_y, int destination_x, int destination_y) {
     return abs(source_x - destination_x) + abs(source_y - destination_y);
 }
 
-action calculate_direction(int x, int y, int next_x, int next_y, action last_action, int mapxsize, int mapysize, char **map) {
+action
+calculate_direction(int x, int y, int next_x, int next_y, action last_action, int mapxsize, int mapysize, char **map) {
     if (x == next_x) {
         if (y > next_y) {
             if (last_action == SOUTH) {
@@ -395,7 +430,10 @@ action random_not_killing(int x, int y, action last_action, enum actions planned
                           char **map) {
     action action;
     bool ok = false;
-    printf("Random\n");
+
+    if (DEBUG)
+        printf("Random\n");
+
     do {
         action = rand() % 4;
 
@@ -446,16 +484,34 @@ char *color(int x, int y, int mapxsize, int mapysize, int cost[mapysize][mapxsiz
             return "\033[0;34m";
     }
 
-    if (chosen[y][x] == 0)
-        return "\033[0;32m";
+    //if (chosen[y][x] == 0)
+    return "\033[0;32m";
 }
 
 void displayGrid(int mapxsize, int mapysize, int heuristic[mapysize][mapxsize], int cost[mapysize][mapxsize],
                  int chosen[mapysize][mapxsize]) {
-    for (int y = 0; y < mapysize; y++) {
-        for (int x = 0; x < mapysize; x++) {
-            printf("%s %3d \033[0m", color(x, y, mapxsize, mapysize, cost, chosen), heuristic[y][x]);
+    if (!DEBUG)
+        return;
+
+    printf("\n");
+    for (int y = 0; y < mapysize + 1; y++) {
+        for (int x = 0; x < mapxsize + 1; x++) {
+            if (y == 0) {
+                if (x == 0) {
+                    printf("\033[0m     \033[0m");
+                } else {
+                    printf("\033[0m %3d \033[0m", x - 1);
+                }
+            } else {
+                if (x == 0) {
+                    printf("\033[0m %3d \033[0m", y - 1);
+                } else {
+                    printf("%s %3d \033[0m", color(x - 1, y - 1, mapxsize, mapysize, cost, chosen),
+                           heuristic[y - 1][x - 1]);
+                }
+            }
         }
         printf("\n");
     }
+    printf("\n");
 }
