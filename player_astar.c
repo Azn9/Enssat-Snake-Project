@@ -59,7 +59,9 @@ void foundPath(
         int cost[mapysize][mapxsize],
         int *next_x,
         int *next_y,
-        int chosen[mapysize][mapxsize]
+        int chosen[mapysize][mapxsize],
+        int last_x,
+        int last_y
 );
 
 char *color(int x, int y, int mapxsize, int mapysize, int cost[mapysize][mapxsize], int chosen[mapysize][mapxsize]);
@@ -130,7 +132,7 @@ action snake(
     int next_x = x;
     int next_y = y;
 
-    foundPath(apple_x, apple_y, x, y, mapxsize, mapysize, heuristic, calculated, cost, &next_x, &next_y, chosen);
+    foundPath(apple_x, apple_y, x, y, mapxsize, mapysize, heuristic, calculated, cost, &next_x, &next_y, chosen, apple_x, apple_y);
     displayGrid(mapxsize, mapysize, heuristic, cost, chosen);
 
     if (DEBUG)
@@ -278,7 +280,9 @@ void foundPath(
         int cost[mapysize][mapxsize],
         int *next_x,
         int *next_y,
-        int chosen[mapysize][mapxsize]
+        int chosen[mapysize][mapxsize],
+        int last_x,
+        int last_y
 ) {
     if (x == destination_x && y == destination_y) {
         if (DEBUG)
@@ -351,6 +355,14 @@ void foundPath(
     if (lessweight == 999999999) { //impossible
         if (DEBUG)
             printf("Pas de chemin\n");
+
+        if (last_x == x && last_y == y) {
+            return;
+        }
+
+        foundPath(last_x, last_y, destination_x, destination_y, mapxsize, mapysize, heuristic_ptr2, calculated_ptr2, cost,
+                  next_x,
+                  next_y, chosen, last_x, last_y);
         return;
     }
 
@@ -375,7 +387,7 @@ void foundPath(
 
     foundPath(lessx, lessy, destination_x, destination_y, mapxsize, mapysize, heuristic_ptr2, calculated_ptr2, cost,
               next_x,
-              next_y, chosen);
+              next_y, chosen, x, y);
 }
 
 int calculWeight(
