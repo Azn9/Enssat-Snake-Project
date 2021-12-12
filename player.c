@@ -6,7 +6,6 @@
 // compiler header files
 #include <stdbool.h> // bool, true, false
 #include <stdlib.h> // rand, abs
-#include <stdio.h> // printf
 #include <unistd.h>
 
 // program header file
@@ -17,7 +16,6 @@ extern const char SNAKE_HEAD; // ascii used for snake's head
 extern const char SNAKE_BODY; // ascii used for snake's body
 extern const char SNAKE_TAIL; // ascii used for snake's tail
 extern const char WALL; // ascii used for the walls
-extern const char PATH; // ascii used for the paths
 extern const char BONUS; // ascii used for the bonuses
 
 char *binome = "Azid Mouad & Joly Axel"; // student names here
@@ -32,8 +30,6 @@ struct path_link {
 void calculate_cell_cost(
         int x,
         int y,
-        int sourcex,
-        int sourcey,
         int destinationx,
         int destinationy,
         int origin_x,
@@ -67,9 +63,9 @@ void search_path(
         int heuristic[mapysize][mapxsize],
         int calculated[mapysize][mapxsize],
         int cost[mapysize][mapxsize],
+        int chosen[mapysize][mapxsize],
         int *next_x,
         int *next_y,
-        int chosen[mapysize][mapxsize],
         int last_x,
         int last_y,
         struct path_link *current_path_link,
@@ -109,8 +105,8 @@ void can_escape(
         int x,
         int y,
         int path_length,
-        int path_x[path_length],
-        int path_y[path_length],
+        const int path_x[path_length],
+        const int path_y[path_length],
         bool *can_escape,
         int *tail_path_x,
         int *tail_path_y
@@ -237,7 +233,7 @@ action snake(
     copy(mapysize, mapxsize, chosen, chosen_empty);
 
     // Calculate the cost of the cells recursively, starting from the snake's head and aiming to reach the bonus
-    calculate_cell_cost(head_x, head_y, head_x, head_y, bonus_x, bonus_y, head_x, head_y, 0, mapxsize, mapysize, cost, heuristic, calculated, &path_found);
+    calculate_cell_cost(head_x, head_y, bonus_x, bonus_y, head_x, head_y, 0, mapxsize, mapysize, cost, heuristic, calculated, &path_found);
 
     // If during calculation of the costs we reached the bonus
     if (path_found) {
@@ -250,7 +246,7 @@ action snake(
         chosen[bonus_y][bonus_x] = 1;
 
         // Search for the fastest path between the snake's head and the bonus
-        search_path(bonus_x, bonus_y, head_x, head_y, mapxsize, mapysize, heuristic, calculated, cost, &next_x, &next_y, chosen, bonus_x, bonus_y, path_link, &path_length);
+        search_path(bonus_x, bonus_y, head_x, head_y, mapxsize, mapysize, heuristic, calculated, cost, chosen, &next_x, &next_y, bonus_x, bonus_y, path_link, &path_length);
 
         // Arrays representing the coordinates of each path cell
         int path_x[path_length];
@@ -342,7 +338,7 @@ action snake(
             if (can_escape_value) { // If the snake can reach his tail after moving, then follow it
                 next_x = next_tail_x;
                 next_y = next_tail_y;
-            } else { // If we can't reach our tail, we search for the farthest cell, and we follow it
+            } else { // If we can't reach our tail, we search for the farest cell, and we follow it
                 find_farest(head_x, head_y, mapxsize, mapysize, cost, heuristic, calculated, chosen, &next_x, &next_y, path_link, &path_length);
             }
         }
@@ -438,7 +434,7 @@ void follow_tail(
     }
 
     // Calculate the cost of the cells recursively, starting from the snake's head and aiming to reach its tail
-    calculate_cell_cost(x, y, x, y, tail_x, tail_y, x, y, 0, mapxsize, mapysize, cost, heuristic, calculated, &path_found);
+    calculate_cell_cost(x, y, tail_x, tail_y, x, y, 0, mapxsize, mapysize, cost, heuristic, calculated, &path_found);
 
     // If a path to the tail is found
     if (path_found) {
@@ -458,7 +454,7 @@ void follow_tail(
         int path_length = 0;
 
         // Trace the path to the tail
-        search_path(tail_x, tail_y, x, y, mapxsize, mapysize, heuristic, calculated, cost, next_x, next_y, chosen, tail_x, tail_y, path_link, &path_length);
+        search_path(tail_x, tail_y, x, y, mapxsize, mapysize, heuristic, calculated, cost, chosen, next_x, next_y, tail_x, tail_y, path_link, &path_length);
 
         // Free the linked list as we don't need it
         free_all_path(path_link);
@@ -558,7 +554,7 @@ void find_farest(
     }
 
     // Trace the path between the current snake's head and the found coordinates
-    search_path(max_x, max_y, x, y, mapxsize, mapysize, heuristic, calculated, cost, next_x, next_y, chosen, max_x, max_y, pathLink, path_length);
+    search_path(max_x, max_y, x, y, mapxsize, mapysize, heuristic, calculated, cost, chosen, next_x, next_y, max_x, max_y, pathLink, path_length);
 }
 
 /*
@@ -573,8 +569,8 @@ void can_escape(
         int x,
         int y,
         int path_length,
-        int path_x[path_length],
-        int path_y[path_length],
+        const int path_x[path_length],
+        const int path_y[path_length],
         bool *can_escape,
         int *tail_path_x,
         int *tail_path_y
@@ -665,7 +661,7 @@ void can_escape(
     bool path_found = false;
 
     // Calculate the cost of the cells recursively, starting from the new snake's head and aiming to reach the new snake's tail
-    calculate_cell_cost(x, y, x, y, tail_x, tail_y, x, y, 0, mapxsize, mapysize, cost, heuristic, calculated, &path_found);
+    calculate_cell_cost(x, y, tail_x, tail_y, x, y, 0, mapxsize, mapysize, cost, heuristic, calculated, &path_found);
 
     // Initialize the next position cell to the current one
     int next_x = x;
@@ -687,7 +683,7 @@ void can_escape(
         int path_length_temp = 0;
 
         // Search for the smallest path between the tail and the head
-        search_path(tail_x, tail_y, x, y, mapxsize, mapysize, heuristic, calculated, cost, &next_x, &next_y, chosen, tail_x, tail_y, path_link, &path_length_temp);
+        search_path(tail_x, tail_y, x, y, mapxsize, mapysize, heuristic, calculated, cost, chosen, &next_x, &next_y, tail_x, tail_y, path_link, &path_length_temp);
 
         // Free the path linked list, we don't need it
         free_all_path(path_link);
@@ -706,8 +702,6 @@ void can_escape(
 void calculate_cell_cost(
         int x,
         int y,
-        int sourcex,
-        int sourcey,
         int destinationx,
         int destinationy,
         int origin_x,
@@ -811,7 +805,7 @@ void calculate_cell_cost(
     }
 
     // Once we found the cell with the less heuristic, we call recursively the calculate_cell_cost method to calculate its neighbour cells costs
-    calculate_cell_cost(less_x, less_y, sourcex, sourcey, destinationx, destinationy, origin_x, origin_y, currentCost + 10, mapxsize, mapysize, cost, heuristic, calculated, path_found);
+    calculate_cell_cost(less_x, less_y, destinationx, destinationy, origin_x, origin_y, currentCost + 10, mapxsize, mapysize, cost, heuristic, calculated, path_found);
 }
 
 /*
@@ -828,9 +822,9 @@ void search_path(
         int heuristic[mapysize][mapxsize],
         int calculated[mapysize][mapxsize],
         int cost[mapysize][mapxsize],
+        int chosen[mapysize][mapxsize],
         int *next_x,
         int *next_y,
-        int chosen[mapysize][mapxsize],
         int last_x,
         int last_y,
         struct path_link *current_path_link,
@@ -929,7 +923,7 @@ void search_path(
         }
 
         // Else, go back to the previous cell and calculate it again
-        search_path(last_x, last_y, destination_x, destination_y, mapxsize, mapysize, heuristic, calculated, cost, next_x, next_y, chosen, last_x, last_y, current_path_link, path_length);
+        search_path(last_x, last_y, destination_x, destination_y, mapxsize, mapysize, heuristic, calculated, cost, chosen, next_x, next_y, last_x, last_y, current_path_link, path_length);
         return;
     }
 
@@ -956,7 +950,7 @@ void search_path(
     }
 
     // If the found cell is not the destination, continue following the path recursively
-    search_path(less_x, less_y, destination_x, destination_y, mapxsize, mapysize, heuristic, calculated, cost, next_x, next_y, chosen, x, y, pathLink, path_length);
+    search_path(less_x, less_y, destination_x, destination_y, mapxsize, mapysize, heuristic, calculated, cost, chosen, next_x, next_y, x, y, pathLink, path_length);
 }
 
 /*
