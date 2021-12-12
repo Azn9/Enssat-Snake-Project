@@ -255,14 +255,14 @@ action snake(
         // Transform the two arrays path_x and path_y to a linked list starting with path_link
         calculate_path(path_link, path_length, path_x, path_y);
 
-        // A temporary value representing if the snake will be able to react its tail after he moved to the bonus
+        // A temporary value representing if the snake will be able to reach its tail after he moved to the bonus
         bool can_escape_value = false;
 
         // Coordinates of the next move to do to reach the snake's tail
         int next_tail_x = head_x;
         int next_tail_y = head_y;
 
-        // Calculate if the snake will be able to react its tail after he moved to the bonus
+        // Calculate if the snake will be able to reach its tail after he moved to the bonus
         can_escape(mapxsize, mapysize, map, s, bonus_x, bonus_y, path_length, path_x, path_y, &can_escape_value, &next_tail_x, &next_tail_y);
 
         // If we found a path to the bonus
@@ -281,7 +281,7 @@ action snake(
                 // Calculate the path to follow the current snake's tail
                 follow_tail(head_x, head_y, tail_x, tail_y, mapxsize, mapysize, cost, heuristic, calculated, chosen, &next_x, &next_y, &found_tail_path, s);
             } else {
-                //If we can react the bonus and then reach our tail after moving, calculate the action to make based on the next move cell's coordinates
+                //If we can reach the bonus and then reach our tail after moving, calculate the action to make based on the next move cell's coordinates
                 action planned_action = calculate_direction(head_x, head_y, next_x, next_y, last_action);
 
                 // Reset everything to their default values
@@ -630,7 +630,7 @@ void can_escape(
     int index = 0;
     current_snake_link = snake;
 
-    // Browse the snake list until we react its end or exceed the count of pieces overflowing
+    // Browse the snake list until we reach its end or exceed the count of pieces overflowing
     while (index < new_snake_length && current_snake_link->next != NULL) {
         int current_x = current_snake_link->x;
         int current_y = current_snake_link->y;
